@@ -2,134 +2,163 @@
 
 import json
 import subprocess
-import sys
+import argparse
+from argparse import RawTextHelpFormatter
 
 
 class AndroidVideo:
-    ''
+    'Create Android videos'
     def __init__(self):
-        print 'Hello world'
+        self.description = 'Create Android compatible videos\n'
+        self.description += ('androidvideo [quality] [video input] '
+                             '[output filename]\n\n')
+        self.description += 'Quality options:\n'
+        self.description += 'low -> Low quality\n'
+        self.description += 'hq  -> High quality\n'
+        self.description += 'hd  -> HD 720p (N/A on all devices)\n'
+        parser = argparse.ArgumentParser(description=self.description,
+                                         formatter_class=RawTextHelpFormatter)
+        parser.add_argument("quality", choices=["low", "hq", "hd"],
+                            help="Quality")
+        parser.add_argument("videoinput",
+                            help="Video input")
+        parser.add_argument("output",
+                            help="Video output",
+                            action="store")
+        args = parser.parse_args()
+        self.quality = args.quality
+        self.input_ = args.videoinput
+        self.output_ = args.output
 
-# if len(sys.argv) == 1:
-#     print "Can't get args"
-#     exit()
-# else:
-#     if len(sys.argv) < 4:
-#         print "Can't get video file name args"
-#         exit()
-#     else:
-#         inputFileName = sys.argv[1]
-#         outputFileName = sys.argv[2]
-#         quality = sys.argv[3]
+        self.outputWidht = 0
+        self.outputHeight = 0
+        self.outputVideoProfile = ""
+        self.outputVideoFrameRate = 0
+        self.outputVideoBitrate = 0
+        self.outputVideoBitrateValue = ""
+        self.outputAudioChannels = ""
+        self.outputAudioBitrate = 0
+        self.outputAudioBitrateValue = ""
 
-# if quality == "hd":
-#     outputWidht = 1280
-#     outputHeight = 720
-#     outputVideoProfile = "Constrained Baseline"
-#     outputVideoFrameRate = 30
-#     outputVideoBitrate = 2197152
-#     outputVideoBitrateValue = "1.9M"
-#     outputAudioChannels = "stereo"
-#     outputAudioBitrate = 193000
-#     outputAudioBitrateValue = "192k"
-# elif quality == "hq":
-#     outputWidht = 480
-#     outputHeight = 360
-#     outputVideoProfile = "Constrained Baseline"
-#     outputVideoFrameRate = 30
-#     outputVideoBitrate = 500900
-#     outputVideoBitrateValue = "480k"
-#     outputAudioChannels = "stereo"
-#     outputAudioBitrate = 129000
-#     outputAudioBitrateValue = "128k"
-# elif quality == "low":
-#     outputWidht = 176
-#     outputHeight = 144
-#     outputVideoProfile = "Constrained Baseline"
-#     outputVideoFrameRate = 12
-#     outputVideoBitrate = 57000
-#     outputVideoBitrateValue = "55k"
-#     outputAudioChannels = "mono"
-#     outputAudioBitrate = 25000
-#     outputAudioBitrateValue = "24k"
-# else:
-#     print "Invalid quality"
-#     exit()
+        self.defaultVideoProfile = "Constrained Baseline"
 
-# command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" > "meta.json"' % inputFileName
+        self.convertVideo()
 
-# output = subprocess.call(command, shell=True)
+    def convertVideo(self):
+        self.setQuality()
+        self.getVideoData()
+        self.executeVideoConversion()
 
-# if output == 0:
-#     print 'Input video data was generated'
-# else:
-#     print "Can't get input video data"
-#     exit()
+    def setQuality(self):
+        if self.quality == "hd":
+            self.outputWidht = 1280
+            self.outputHeight = 720
+            self.outputVideoProfile = self.defaultVideoProfile
+            self.outputVideoFrameRate = 30
+            self.outputVideoBitrate = 2097152
+            self.outputVideoBitrateValue = "2M"
+            self.outputAudioChannels = "stereo"
+            self.outputAudioBitrate = 196608
+            self.outputAudioBitrateValue = "192k"
+        elif self.quality == "hq":
+            self.outputWidht = 480
+            self.outputHeight = 360
+            self.outputVideoProfile = self.defaultVideoProfile
+            self.outputVideoFrameRate = 30
+            self.outputVideoBitrate = 512000
+            self.outputVideoBitrateValue = "500k"
+            self.outputAudioChannels = "stereo"
+            self.outputAudioBitrate = 131072
+            self.outputAudioBitrateValue = "128k"
+        elif self.quality == "low":
+            self.outputWidht = 176
+            self.outputHeight = 144
+            self.outputVideoProfile = self.defaultVideoProfile
+            self.outputVideoFrameRate = 12
+            self.outputVideoBitrate = 57344
+            self.outputVideoBitrateValue = "56k"
+            self.outputAudioChannels = "mono"
+            self.outputAudioBitrate = 24576
+            self.outputAudioBitrateValue = "24k"
+        else:
+            exit("Invalid quality")
 
-# json_data = open('meta.json')
+    def getVideoData(self):
+        command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" > "meta.json"' % self.input_
 
-# data = json.load(json_data)
+        output = subprocess.call(command, shell=True)
 
-# command = 'ffmpeg -i %s ' % inputFileName
+        if output != 0:
+            exit("Can't get input video data")
 
-# videoWidth = data["streams"][0]["width"]
-# videoHeight = data["streams"][0]["height"]
+    def executeVideoConversion(self):
+        json_data = open('meta.json')
 
-# if videoWidth > outputWidht:
-#     command += '-s %sx%s ' % (outputWidht, outputHeight)
+        data = json.load(json_data)
 
-# videoBitRate = data["streams"][0]["bit_rate"]
-# videoBitRateInt = int(videoBitRate)
+        command = 'ffmpeg '
 
-# if videoBitRateInt > outputVideoBitrate:
-#     command += '-b:v %s ' % outputVideoBitrateValue
+        command += '-i "%s" ' % self.input_
 
-# videoCodec = data["streams"][0]["codec_name"]
+        # videoWidth = data["streams"][0]["width"]
 
-# command += '-c:v libx264 '
+        # videoHeight = data["streams"][0]["height"]
 
-# command += '-profile:v baseline '
+        command += '-vf scale=%sx%s,setsar=1:1 ' % (self.outputWidht,
+                                                    self.outputHeight)
 
-# videoFrameRate = data["streams"][0]["r_frame_rate"]
-# videoFrameRateSplited = videoFrameRate.split("/")
-# videoFrameRateShort = videoFrameRateSplited[0]
-# videoFrameRate = int(videoFrameRateShort[:2])
+        videoBitRate = data["format"]["bit_rate"]
 
-# if videoFrameRate > outputVideoFrameRate:
-#     command += '-r %s ' % outputVideoFrameRate
+        videoBitRateInt = int(videoBitRate)
 
-# videoAudioCodec = data["streams"][1]["codec_name"]
-# videoAudioChannel = data["streams"][1]["channel_layout"]
-# videoAudioBitRate = data["streams"][1]["bit_rate"]
-# videoAudioBitRateInt = int(videoAudioBitRate)
+        if videoBitRateInt > self.outputVideoBitrate:
+            command += '-b:v %s ' % self.outputVideoBitrateValue
 
-# command += '-c:a libvo_aacenc '
-# if outputAudioChannels == "mono":
-#     command += '-ac 1 '
-# else:
-#     command += '-ac 2 '
-# if videoAudioBitRateInt > outputAudioBitrate:
-#     command += '-ab %s ' % outputAudioBitrateValue
-# else:
-#     videoAudioBitRateInt = int(videoAudioBitRateInt / 1000)
-#     command += '-ab %sk ' % videoAudioBitRateInt
+        command += '-c:v libx264 '
 
-# command += '%s' % outputFileName
+        command += '-profile:v baseline -level:v 4.0 '
 
-# if quality == "hd":
-#     command += '-hd.mp4'
-# elif quality == "hq":
-#     command += '-hq.mp4'
-# else:
-#     command += '.mp4'
+        videoFrameRate = data["streams"][0]["r_frame_rate"]
 
-# output = subprocess.call(command, shell=True)
+        videoFrameRateSplited = videoFrameRate.split("/")
 
-# if output == 0:
-#     print 'Video generated'
-# else:
-#     print "Can't generate video"
-#     print command
-#     exit()
+        videoFrameRateShort = videoFrameRateSplited[0]
 
-# json_data.close()
+        videoFrameRate = int(videoFrameRateShort[:2])
+
+        if videoFrameRate > self.outputVideoFrameRate:
+            command += '-r %s ' % self.outputVideoFrameRate
+
+        videoAudioBitRate = data["streams"][1]["bit_rate"]
+
+        videoAudioBitRateInt = int(videoAudioBitRate)
+
+        command += '-c:a libvo_aacenc '
+
+        if self.outputAudioChannels == "mono":
+            command += '-ac 1 '
+        else:
+            command += '-ac 2 '
+
+        if videoAudioBitRateInt > self.outputAudioBitrate:
+            command += '-ab %s ' % self.outputAudioBitrateValue
+
+        command += '%s' % self.output_
+
+        if self.quality == "hd":
+            command += '-hd.mp4'
+        elif self.quality == "hq":
+            command += '-hq.mp4'
+        else:
+            command += '.mp4'
+
+        print command
+
+        output = subprocess.call(command, shell=True)
+
+        if output != 0:
+            exit("Video NOT generated")
+
+        print "All done!"
+
+        json_data.close()
