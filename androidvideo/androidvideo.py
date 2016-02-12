@@ -4,6 +4,7 @@ import json
 import subprocess
 import argparse
 from argparse import RawTextHelpFormatter
+import tempfile
 
 
 class AndroidVideo:
@@ -29,6 +30,8 @@ class AndroidVideo:
         self.quality = args.quality
         self.input_ = args.videoinput
         self.output_ = args.output
+
+        self.file_ = None
 
         self.outputWidht = 0
         self.outputHeight = 0
@@ -84,7 +87,13 @@ class AndroidVideo:
             exit("Invalid quality")
 
     def getVideoData(self):
-        command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" > "meta.json"' % self.input_
+        self.file_ = tempfile.NamedTemporaryFile()
+
+        self.file_.write('')
+
+        self.file_.seek(0)
+
+        command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" > "%s"' % (self.input_, self.file_.name)
 
         output = subprocess.call(command, shell=True)
 
@@ -92,17 +101,13 @@ class AndroidVideo:
             exit("Can't get input video data")
 
     def executeVideoConversion(self):
-        json_data = open('meta.json')
+        json_data = open(self.file_.name)
 
         data = json.load(json_data)
 
         command = 'ffmpeg '
 
         command += '-i "%s" ' % self.input_
-
-        # videoWidth = data["streams"][0]["width"]
-
-        # videoHeight = data["streams"][0]["height"]
 
         command += '-vf scale=%sx%s,setsar=1:1 ' % (self.outputWidht,
                                                     self.outputHeight)
@@ -162,3 +167,5 @@ class AndroidVideo:
         print "All done!"
 
         json_data.close()
+
+        self.file_.close()
