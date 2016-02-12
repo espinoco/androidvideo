@@ -4,21 +4,12 @@ import json
 import subprocess
 import sys
 
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-
 if len(sys.argv) == 1:
-    print bcolors.FAIL + "Can't get args" + bcolors.ENDC
+    print "Can't get args"
     exit()
 else:
     if len(sys.argv) < 4:
-        print bcolors.FAIL + "Can't get video file name args" + bcolors.ENDC
+        print "Can't get video file name args"
         exit()
     else:
         inputFileName = sys.argv[1]
@@ -56,7 +47,7 @@ elif quality == "low":
     outputAudioBitrate = 25000
     outputAudioBitrateValue = "24k"
 else:
-    print bcolors.FAIL + "Invalid quality" + bcolors.ENDC
+    print "Invalid quality"
     exit()
 
 command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" > "meta.json"' % inputFileName
@@ -64,9 +55,9 @@ command = 'ffprobe -v quiet -print_format json -show_format -show_streams "%s" >
 output = subprocess.call(command, shell=True)
 
 if output == 0:
-    print bcolors.OKGREEN + 'Input video data was generated' + bcolors.ENDC
+    print 'Input video data was generated'
 else:
-    print bcolors.FAIL + "Can't get input video data" + bcolors.ENDC
+    print "Can't get input video data"
     exit()
 
 json_data = open('meta.json')
@@ -129,9 +120,9 @@ else:
 output = subprocess.call(command, shell=True)
 
 if output == 0:
-    print bcolors.OKGREEN + 'Video generated' + bcolors.ENDC
+    print 'Video generated'
 else:
-    print bcolors.FAIL + "Can't generate video" + bcolors.ENDC
+    print "Can't generate video"
     print command
     exit()
 
