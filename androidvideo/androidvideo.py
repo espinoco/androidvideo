@@ -98,7 +98,7 @@ class AndroidVideo:
         output = subprocess.call(command, shell=True)
 
         if output != 0:
-            exit("Can't get input video data")
+            exit("Can't get video input data")
 
     def executeVideoConversion(self):
         json_data = open(self.file_.name)
@@ -148,14 +148,7 @@ class AndroidVideo:
         if videoAudioBitRateInt > self.outputAudioBitrate:
             command += '-ab %s ' % self.outputAudioBitrateValue
 
-        command += '%s' % self.output_
-
-        if self.quality == "hd":
-            command += '-hd.mp4'
-        elif self.quality == "hq":
-            command += '-hq.mp4'
-        else:
-            command += '.mp4'
+        command += '%s.mp4' % self.output_
 
         print command
 
